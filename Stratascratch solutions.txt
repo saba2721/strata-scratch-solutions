@@ -1,0 +1,62 @@
+Days At Number One - ID 10173
+𝐅𝐢𝐧𝐝 𝐭𝐡𝐞 𝐧𝐮𝐦𝐛𝐞𝐫 𝐨𝐟 𝐝𝐚𝐲𝐬 𝐚 𝐔𝐒 𝐭𝐫𝐚𝐜𝐤 𝐡𝐚𝐬 𝐬𝐭𝐚𝐲𝐞𝐝 𝐢𝐧 𝐭𝐡𝐞 1𝐬𝐭 𝐩𝐨𝐬𝐢𝐭𝐢𝐨𝐧 𝐟𝐨𝐫 𝐛𝐨𝐭𝐡 𝐭𝐡𝐞 𝐔𝐒 𝐚𝐧𝐝 𝐰𝐨𝐫𝐥𝐝𝐰𝐢𝐝𝐞 𝐫𝐚𝐧𝐤𝐢𝐧𝐠𝐬.
+
+with final as (
+select v.*, t.* from 
+(select trackname as t_trackname , artist,date as date1 from
+spotify_daily_rankings_2017_us
+order by trackname
+) as v
+inner join
+(select trackname, artist,date from
+spotify_worldwide_daily_song_ranking
+where position = 1 and region = 'us'
+order by id
+) as t
+on v.t_trackname = t.trackname
+and 
+v.date1 = t.date
+)
+select t_trackname, count(date1) as days_on_1st_position from final
+group by t_trackname
+order by days_on_1st_position;
+------------------------------------------------------------------------------------------------------
+Workers With The Highest Salaries - ID 10353
+Find the titles of workers that earn the highest salary. 
+Output the highest-paid title or multiple titles that share the highest salary.
+
+with cte as (select *, dense_rank() over (order by salary desc) as rnk from 
+(select w.*,t.* from worker w
+join title t
+on w.worker_id = t.worker_ref_id) as k)
+select worker_title from cte
+where rnk = 1;
+---------------------------------------------------------------------------------------------------------
+Finding User Purchases - ID 10322
+Write a query that'll identify returning active users. A returning active user is a user that has made a second purchase within 7 days of any other of their purchases. 
+Output a list of user_ids of these returning active users.
+
+with cte as (select *, lead(created_at,1) over (partition by user_id order by created_at) as next_purchase
+from amazon_transactions)
+select distinct(user_id) from cte
+where datediff(next_purchase,created_at)<=7;
+----------------------------------------------------------------------------------------------------------
+Salaries Differences - ID 10308
+Write a query that calculates the difference between the highest salaries found in the marketing and engineering departments. 
+Output just the absolute difference in salaries.
+
+select (select salary from 
+(select e.*, d.id as dept_id, d.department from db_employee e
+join db_dept as d
+on e.department_id = d.id) as t1
+where department = 'marketing'
+order by salary desc
+limit 1)
+-
+(select salary from 
+(select e.*, d.id as dept_id, d.department from db_employee e
+join db_dept as d
+on e.department_id = d.id) as t1
+where department = 'engineering'
+order by salary desc
+limit 1) as salary_difference;
